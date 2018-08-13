@@ -14,10 +14,19 @@ import Image
 import zbar
 from pyzbar import pyzbar
 import requests
+import json
+import Tkinter as tk
+import tkMessageBox
+root = tk.Tk()
+root.withdraw()
 
+api_key='7E53B18FA49BB5A9A434CF81E9271C13'
+api_endpoint='https://api.upcdatabase.org/product'
 
 host = 'http://10.0.0.220:8080/'
 url = host + 'shot.jpg'
+
+all_barcodes=set()
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -69,7 +78,20 @@ while True:
             print("Barcode Found :", barcodeData)
 
         if barcodeData != '':
-            break
+            if barcodeData not in all_barcodes:
+                all_barcodes.add(barcodeData)
+                api_url = str(api_endpoint + '/' + barcodeData + '/' + api_key)
+                response = requests.get(api_url)
+                json_data = json.loads(response.text)
+
+                print json_data
+                
+                description = json_data['description']
+                title = json_data['title']
+                tkMessageBox.showwarning('Product Details', 'Title : ' +title)
+
+            else:
+                pass
 
         cv2.imshow("Barcode Scanner", frame)
         key = cv2.waitKey(1) & 0xFF
@@ -81,14 +103,4 @@ while True:
 # close the output CSV file do a bit of cleanup
 print("[INFO] cleaning up...")
 
-
-api_key='7E53B18FA49BB5A9A434CF81E9271C13'
-api_endpoint='https://api.upcdatabase.org/product'
-api_url=str(api_endpoint+'/'+barcodeData+'/'+api_key)
-print api_url
-
-response=requests.get(api_url)
-
 cv2.destroyAllWindows()
-
-print response.text
